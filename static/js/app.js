@@ -1,18 +1,18 @@
 function buildMetadata(sample) {
+  // Use d3 to select the panel with id of `#sample-metadata`
+  var metaData = document.getElementById('sample-metadata')
+  // Use `.html("") to clear any existing metadata
+  metaData.innerHTML = '';
+  // Use `Object.entries` to add each key and value pair to the panel
+  var metaItems = [["SampleId", "SAMPLEID"], ["Ethnicity", "ETHNICITY"], ['Age', 'AGE'], ['Gender', 'GENDER'], ['WWFreq', 'WFREQ'], ['Country', 'COUNTRY012']]
+  // Hint: Inside the loop, you will need to use d3 to append new
+  // tags for each key-value in the metadata.
+  for (i=0; i<metaItems.length; i++){
+    var addNewItem = document.createElement('li');
+    addNewItem.innerHTML = `${metaItems[i][0]}: ${metaItems[i][1]}`;
+    metaData.appendChild(addNewItem);
+  }
 
-  // @TODO: Complete the following function that builds the metadata panel
-
-  // Use `d3.json` to fetch the metadata for a sample
-    // Use d3 to select the panel with id of `#sample-metadata`
-
-    // Use `.html("") to clear any existing metadata
-
-    // Use `Object.entries` to add each key and value pair to the panel
-    // Hint: Inside the loop, you will need to use d3 to append new
-    // tags for each key-value in the metadata.
-
-    // BONUS: Build the Gauge Chart
-    // buildGauge(data.WFREQ);
 }
 
 function buildCharts(sample) {
