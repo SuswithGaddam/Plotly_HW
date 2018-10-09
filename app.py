@@ -27,7 +27,7 @@ Base.prepare(engine, reflect=True)
 
 # Save references to each table
 otu = Base.classes.otu
-Samples_Metadata = Base.classes.sample_metadata
+Samples_Metadata = Base.classes.samples_metadata
 Samples = Base.classes.samples
 
 #Create python to DB interface
@@ -70,17 +70,17 @@ def sample_metadata(sample):
     bbtype, sample_number = sample.split("_")
     sample_data = session.query(Samples_Metadata).filter(Samples_Metadata.SAMPLEID == sample_number).all()
     sample_details = {}
-    for sample in sample_data:
-        sample_details["SAMPLEID"] = sample.SAMPLEID
-        sample_details["ETHNICITY"] = sample.ETHNICITY
-        sample_details["GENDER"] = sample.GENDER
-        sample_details["AGE"] = sample.AGE
-        sample_details["LOCATION"] = sample.LOCATION
-        sample_details["BBTYPE"] = sample.BBTYPE
+    for each in sample_data:
+        sample_details["SAMPLEID"] = each.SAMPLEID
+        sample_details["ETHNICITY"] = each.ETHNICITY
+        sample_details["GENDER"] = each.GENDER
+        sample_details["AGE"] = each.AGE
+        sample_details["LOCATION"] = each.LOCATION
+        sample_details["BBTYPE"] = each.BBTYPE
 
     #convert to json and return the dictionary
     return jsonify(sample_details)   
- 
+
 #Route to send an object containing out_id along with the sample values
 @app.route("/samples/<sample>")
 def samples(sample):
@@ -101,4 +101,4 @@ def samples(sample):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

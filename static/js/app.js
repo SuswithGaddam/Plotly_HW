@@ -1,56 +1,137 @@
-function buildMetadata(sample) {
-  // Use d3 to select the panel with id of `#sample-metadata`
-  var metaData = document.getElementById('sample-metadata')
-  // Use `.html("") to clear any existing metadata
-  metaData.innerHTML = '';
-  // Use `Object.entries` to add each key and value pair to the panel
-  var metaItems = [["SampleId", "SAMPLEID"], ["Ethnicity", "ETHNICITY"], ['Age', 'AGE'], ['Gender', 'GENDER'], ['WWFreq', 'WFREQ'], ['Country', 'COUNTRY012']]
-  // Hint: Inside the loop, you will need to use d3 to append new
-  // tags for each key-value in the metadata.
-  for (i=0; i<metaItems.length; i++){
-    var addNewItem = document.createElement('li');
-    addNewItem.innerHTML = `${metaItems[i][0]}: ${metaItems[i][1]}`;
-    metaData.appendChild(addNewItem);
-  }
-
-}
-
-function buildCharts(sample) {
-
-  // @TODO: Use `d3.json` to fetch the sample data for the plots
-
-    // @TODO: Build a Bubble Chart using the sample data
-
-    // @TODO: Build a Pie Chart
-    // HINT: You will need to use slice() to grab the top 10 sample_values,
-    // otu_ids, and labels (10 each).
-}
-
 function init() {
-  // Grab a reference to the dropdown select element
-  var selector = d3.select("#selDataset");
+  getSamples();
+}
 
-  // Use the list of sample names to populate the select options
-  d3.json("/names").then((sampleNames) => {
-    sampleNames.forEach((sample) => {
-      selector
-        .append("option")
-        .text(sample)
-        .property("value", sample);
-    });
+//Initialize the dashboard
+init();
 
-    // Use the first sample from the list to build the initial plots
-    const firstSample = sampleNames[0];
-    buildCharts(firstSample);
-    buildMetadata(firstSample);
+//Gets the available sample values
+function getSamples() {
+  //Grab the reference to the dropdown select element
+  var selDataset = document.getElementById('selDataset');
+  //Use the list of sample names to populate the select sample
+  Plotly.d3.json('/names', function (error, samplenames) {
+      for (var i = 0; i < samplenames.length; i++) {
+          var option = document.createElement('option');
+          option.text = samplenames[i];
+          option.value = samplenames[i];
+          selDataset.appendChild(option)
+      }
+      getData(samplenames[0], buildCharts);
+  })
+}
+
+//Function to get the sample data from the routes - sample/sample and 'otu'
+function getData(sample, callback) {
+
+  Plotly.d3.json('/samples/'+sample, function (error, sampleData) {
+      if (error) return console.warn(error);
+      console.log("At get data")
+      Plotly.d3.json('/otu', function (error, otuData) {
+          console.log('otuData',otuData)
+          if (error) return console.warn(error);
+          callback(sampleData, otuData);
+      });
+  });
+  Plotly.d3.json('/metadata/'+sample, function(error, metaData) {
+      if (error) return console.warn(error);
+      console.log('At metadata')
+      updateMetaData(newData);
   });
 }
 
-function optionChanged(newSample) {
-  // Fetch new data each time a new sample is selected
-  buildCharts(newSample);
-  buildMetadata(newSample);
+//Function to initiate the updation process
+function optionChanged(newSample){
+  getData(newSample, updateCharts);
+}
+//Function to build the basic charts when the page loads
+function buildCharts(sampleData, otuData) {
+
+  //Loop through sample data and find the OTU Taxonomic Name
+  var labels = sampleData[0]['otu_ids'].map(function (item) {
+      return otuData[item]
+  });
+  //Build PIE Chart
+  console.log("At charts")
+
+  var piedata = [{
+
+      values: sampleData[0]['sample_values'].slice(0, 10),
+      labels: sampleData[0]['otu_ids'].slice(0, 10),
+      hovertext: labels.slice(0, 10),
+      hoverinfo: 'hovertext',
+      type: 'pie'
+  }];
+
+  var pielayout = { height:400, width:400 };
+
+  var PIE = document.getElementById('pie_chart');
+  Plotly.plot(PIE, piedata, pielayout);
+
+  // Build Bubble Chart
+
+  var bubbleData = [{
+      x: sampleData[0]['otu_ids'],
+      y: sampleData[0]['sample_values'],
+      text: labels,
+      mode: 'markers',
+      marker: {
+          size: sampleData[0]['sample_values'],
+          color: sampleData[0]['otu_ids'],
+          colorscale: "Earth",
+      }
+  }];
+
+  var bubbleLayout = { height:600, width:1200, hovermode: 'closest', xaxis: { title: 'OTU ID' } };
+  var BUBBLE = document.getElementById('bubble');
+  Plotly.plot(BUBBLE, bubbleData, bubbleLayout);
 }
 
-// Initialize the dashboard
-init();
+//Function to update the charts based on the sample selection
+function updateCharts(sampleData, otuData) {
+
+  
+  var sampleValues = sampleData[0]['sample_values'];
+  var otuIDs = sampleData[0]['otu_ids'];
+  // Return the OTU Description for each otuID in the dataset
+  var labels = otuIDs.map(function(item) {
+      return otuData[item]
+  });
+    
+  // Update the Bubble Chart with the new data
+  var BUBBLE = document.getElementById('bubble');
+  Plotly.restyle(BUBBLE, 'x', [otuIDs]);
+  Plotly.restyle(BUBBLE, 'y', [sampleValues]);
+  Plotly.restyle(BUBBLE, 'text', [labels]);
+  Plotly.restyle(BUBBLE, 'marker.size', [sampleValues]);
+  Plotly.restyle(BUBBLE, 'marker.color', [otuIDs]);
+  
+  // Update the Pie Chart with the new data
+  var PIE = document.getElementById('pie_chart');
+  var pieUpdate = {
+      values: [sampleValues.slice(0, 10)], 
+      labels: [otuIDs.slice(0, 10)],
+      hovertext: [labels.slice(0, 10)],
+      hoverinfo: 'hovertext',
+      type: 'pie'
+  };
+  
+  Plotly.restyle(PIE, pieUpdate);
+  
+}
+
+// Create a function to update the Sample Meta Data 
+function updateMetaData(data) {
+  // Reference to Panel element for sample metadata
+  var PANEL = document.getElementById("sample-MetaData");
+  // Clear any existing metadata
+  PANEL.innerHTML = '';
+  // Loop through all of the keys in the json response and
+  // create new metadata tags
+  for(var key in data) {
+      h6tag = document.createElement("h6");
+      h6Text = document.createTextNode(`${key}: ${data[key]}`);
+      h6tag.append(h6Text);
+      PANEL.appendChild(h6tag);
+  }  
+}
