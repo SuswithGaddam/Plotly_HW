@@ -14,4 +14,4 @@
   * otu_labels for the text values
   
 #### Hosted on Heroku:
-* [Heroku App URL.] (https://bbuttonplotly-api-heroku.herokuapp.com/)
+* [Heroku App URL.](https://bbuttonplotly-api-heroku.herokuapp.com/)
