@@ -56,10 +56,10 @@ def names():
 #Route to list OTU descriptions
 @app.route('/otu')
 def otu_list():
-    otu_res = session.query(otu.lowest_taxonomical_unit_found).all()
-
-    #Use ravel to extact the tuples
-    otu_list = list(np.ravel(otu_res))
+    otu_res = session.query(otu.lowest_taxonomic_unit_found).all()
+    otu_list = []
+    for res in otu_res:
+        otu_list.append(res[0])
     #conver to json and return the list
     return jsonify(otu_list)
 
@@ -81,21 +81,20 @@ def sample_metadata(sample):
     #convert to json and return the dictionary
     return jsonify(sample_details)   
 
-#Route to send an object containing out_id along with the sample values
+#Route to send an object containing otu_id along with the sample values
 @app.route("/samples/<sample>")
 def samples(sample):
-    """Return `otu_ids`, `otu_labels`,and `sample_values`."""
+    """Return `otu_ids` and `sample_values`."""
     stmt = session.query(Samples).statement
     df = pd.read_sql_query(stmt, session.bind)
 
     # Filter the data based on the sample number and
     # only keep rows with values above 1
-    sample_data = df.loc[df[sample] > 1, ["otu_id", "otu_label", sample]]
+    sample_data = df[df[sample]>1].sort_values(by=sample,ascending=False)
     # Format the data to send as json
     data = {
-        "otu_ids": sample_data.otu_id.values.tolist(),
+        "otu_ids": sample_data[sample].index.values.tolist(),
         "sample_values": sample_data[sample].values.tolist(),
-        "otu_labels": sample_data.otu_label.tolist(),
     }
     return jsonify(data)
 
